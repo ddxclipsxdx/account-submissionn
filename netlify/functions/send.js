@@ -13,46 +13,54 @@ exports.handler = async (event) => {
     let header = [];
     let numbers = [];
 
-    // Updated pattern to match:
-    // - Numbers starting with 0 followed by 10 digits (total 11)
-    // - Numbers starting with 9 followed by 9 digits (total 10)
-    // - Numbers that are exactly 10 or 11 digits and contain only numbers
-    const validPattern = /^(\d{10,11})$/;
-
     for (let line of lines) {
-      const clean = line.trim();
+      // Remove invisible Unicode characters (like U+200E) and trim
+      const clean = line.replace(/[\u200E\u200F\u202A-\u202E]/g, '').trim();
       
       // Skip empty lines
       if (clean === "") continue;
 
-      // Check if line contains only digits and has valid length
+      // Check if line contains only digits after cleaning
       if (/^\d+$/.test(clean)) {
         const length = clean.length;
         
         // Handle different phone number formats
         if (length === 10) {
-          // 10-digit number (9xxxxxxxxx format)
+          // 10-digit number
           if (clean.startsWith("9")) {
             numbers.push("0" + clean); // Add leading 0
           } else {
-            // Could be a 10-digit number starting with something else
             numbers.push(clean);
           }
         } else if (length === 11) {
-          // 11-digit number (09xxxxxxxxx format)
+          // 11-digit number
           if (clean.startsWith("09")) {
             numbers.push(clean);
           } else {
-            // 11 digits but not starting with 09 - still keep as is
             numbers.push(clean);
           }
+        } else if (length === 12 && clean.startsWith("09")) {
+          // 12-digit with leading 09 (should be 11 digits normally)
+          numbers.push(clean);
         } else {
           // Not a valid phone number length, treat as header
           header.push(line);
         }
       } else {
-        // Contains non-digits, treat as header
-        header.push(line);
+        // Contains non-digits (after cleaning), check if it's actually a number with special chars
+        // Try to extract digits only
+        const digitsOnly = clean.replace(/\D/g, '');
+        if (digitsOnly.length >= 10 && digitsOnly.length <= 12) {
+          // It's probably a number with some formatting
+          let phoneNumber = digitsOnly;
+          if (phoneNumber.length === 10 && phoneNumber.startsWith("9")) {
+            phoneNumber = "0" + phoneNumber;
+          }
+          numbers.push(phoneNumber);
+        } else {
+          // Keep header lines untouched
+          header.push(line);
+        }
       }
     }
 
