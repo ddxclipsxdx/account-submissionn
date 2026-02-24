@@ -5,7 +5,6 @@
 <title>Account Submission - Bryle</title>
 
 <style>
-/* BODY */
 body{
   font-family:Segoe UI;
   background:#ffffff;
@@ -15,32 +14,31 @@ body{
   height:100vh;
 }
 
-/* COLORED REALISTIC BOX */
+/* GLASS UI BOX */
 .box{
-  width:440px;
+  width:460px;
   padding:30px;
-  border-radius:18px;
-  background:linear-gradient(145deg,#f0f4ff,#e4ebff);
+  border-radius:20px;
+  background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(15px);
+  border:1px solid rgba(255,255,255,.4);
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
   text-align:center;
-  box-shadow:
-    0 10px 25px rgba(0,0,0,.08),
-    inset 0 0 10px rgba(255,255,255,.7);
-  position:relative;
 }
 
-/* RGB OUTLINE */
+/* RGB subtle glow */
 .box::before{
   content:"";
   position:absolute;
   inset:-2px;
-  border-radius:20px;
+  border-radius:22px;
   background:linear-gradient(
-    45deg,
-    red,orange,yellow,green,cyan,blue,violet,red
+    45deg,red,orange,yellow,green,cyan,blue,violet,red
   );
   background-size:400%;
   z-index:-1;
-  animation:rgb 10s linear infinite;
+  animation:rgb 12s linear infinite;
+  opacity:.25;
 }
 
 @keyframes rgb{
@@ -48,88 +46,52 @@ body{
   100%{background-position:400%}
 }
 
-/* TITLE */
-h2{
-  margin-bottom:20px;
-}
-
-/* SITE BUTTONS */
 button.site{
   padding:10px 16px;
   margin:5px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:#007bff;
   color:white;
   cursor:pointer;
   font-weight:bold;
 }
 
-button.site:hover{
-  background:#0056b3;
-}
-
 .selected{
   background:#28a745 !important;
 }
 
-/* TEXTAREA */
-textarea{
+input, textarea{
   width:100%;
-  height:140px;
   padding:12px;
-  border-radius:10px;
-  border:1px solid #ccc;
-  margin-top:10px;
-  resize:none;
-  font-size:14px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  margin-top:12px;
+  background:rgba(255,255,255,.8);
 }
 
-/* LIVE COUNTER */
-.counter{
-  font-size:13px;
-  color:#555;
-  margin-top:6px;
-}
+textarea{height:140px;}
 
-/* ANIMATED SUBMIT BUTTON */
 .submit-btn{
   margin-top:15px;
-  padding:12px;
+  padding:14px;
   width:100%;
   border:none;
-  border-radius:10px;
+  border-radius:12px;
   color:white;
   font-weight:bold;
   background:linear-gradient(45deg,#007bff,#00d4ff);
-  background-size:200%;
   cursor:pointer;
   transition:.3s;
 }
 
 .submit-btn:hover{
-  animation:btnrgb 2s infinite linear;
   transform:scale(1.05);
 }
 
-@keyframes btnrgb{
-  0%{background-position:0%}
-  100%{background-position:200%}
-}
-
-/* SUCCESS TEXT */
-.success{
-  margin-top:15px;
-  color:green;
-  font-weight:bold;
-}
-
-/* FOOTER */
-.footer{
-  margin-top:20px;
-  font-size:13px;
-  color:#666;
-}
+.counter{font-size:13px;margin-top:5px;color:#555;}
+.success{margin-top:15px;color:green;font-weight:bold;}
+.footer{margin-top:20px;font-size:13px;color:#666;}
 </style>
 </head>
 
@@ -147,16 +109,13 @@ textarea{
 
 <form id="form">
 
-<textarea id="numbers"
-placeholder="Enter numbers here..."
-required></textarea>
+<input type="text" id="fbname" placeholder="Facebook Name:" required>
+
+<textarea id="numbers" placeholder="Enter numbers here..." required></textarea>
 
 <div class="counter" id="count">0 numbers entered</div>
 
-<button class="submit-btn" type="submit">
-Submit Accounts 🚀
-</button>
-
+<button class="submit-btn">Submit Accounts</button>
 </form>
 
 <div class="success" id="msg"></div>
@@ -177,71 +136,61 @@ function selectSite(site){
   document.getElementById(site).classList.add("selected");
 }
 
-/* LIVE NUMBER COUNTER */
-document.getElementById("numbers").addEventListener("input",()=>{
-let count=document.getElementById("numbers").value
+/* LIVE COUNT */
+numbers.oninput=()=>{
+let count=numbers.value
 .replace(/,/g,"\n")
 .replace(/\s+/g,"\n")
 .split("\n")
 .filter(n=>n.trim()).length;
+countEl.innerText=count+" numbers entered";
+};
 
-document.getElementById("count").innerHTML=
-count+" numbers entered";
-});
-
-/* SUBMIT FUNCTION */
-document.getElementById("form").addEventListener("submit",async e=>{
+form.onsubmit=async e=>{
 e.preventDefault();
 
-/* ANTI SPAM (10 sec cooldown) */
 if(Date.now()-lastSubmitTime<10000){
-alert("Please wait 10 seconds before submitting again.");
+alert("Wait 10 seconds before submitting again.");
 return;
 }
 
-if(!selectedSite){
-alert("Select site first!");
-return;
-}
+let fb=fbname.value.trim();
+if(!fb){alert("Facebook name required.");return;}
+if(!selectedSite){alert("Select site first.");return;}
 
-let numbers=document.getElementById("numbers").value
+let nums=numbers.value
 .replace(/,/g,"\n")
 .replace(/\s+/g,"\n")
 .split("\n")
 .map(n=>n.trim())
 .filter(n=>n);
 
-const valid=/^(09\d{9}|9\d{9})$/;
+let valid=/^(09\d{9}|9\d{9})$/;
 let cleaned=[];
 
-for(let num of numbers){
-if(!valid.test(num)){
-alert("Invalid number: "+num);
-return;
-}
-if(num.startsWith("9")) num="0"+num;
-cleaned.push(num);
+for(let n of nums){
+if(!valid.test(n)){alert("Invalid number: "+n);return;}
+if(n.startsWith("9")) n="0"+n;
+cleaned.push(n);
 }
 
 cleaned=[...new Set(cleaned)];
 
-const formatted=
-`Site: ${selectedSite}\n\n${cleaned.join("\n")}`;
-
 await fetch("/.netlify/functions/send",{
 method:"POST",
-headers:{ "Content-Type":"application/json"},
-body:JSON.stringify({numbers:formatted})
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+numbers:`Site: ${selectedSite}\nFacebook: ${fb}\n\n${cleaned.join("\n")}`,
+filename:fb
+})
 });
 
+msg.innerHTML="✅ Submitted successfully!";
+numbers.value="";
+fbname.value="";
+count.innerHTML="0 numbers entered";
 lastSubmitTime=Date.now();
-
-document.getElementById("msg").innerHTML=
-"✅ Submitted successfully!";
-
-document.getElementById("numbers").value="";
-document.getElementById("count").innerHTML="0 numbers entered";
-});
+};
 </script>
 
 </body>
