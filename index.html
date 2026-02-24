@@ -5,6 +5,7 @@
 <title>Account Submission - Bryle</title>
 
 <style>
+/* BODY */
 body{
   font-family:Segoe UI;
   background:#ffffff;
@@ -12,21 +13,23 @@ body{
   justify-content:center;
   align-items:center;
   height:100vh;
+  margin:0;
 }
 
-/* GLASS UI BOX */
+/* GLASS BOX */
 .box{
   width:460px;
   padding:30px;
   border-radius:20px;
-  background:rgba(255,255,255,0.6);
-  backdrop-filter:blur(15px);
-  border:1px solid rgba(255,255,255,.4);
+  background:rgba(255,255,255,.6);
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.5);
   box-shadow:0 10px 30px rgba(0,0,0,.12);
   text-align:center;
+  position:relative;
 }
 
-/* RGB subtle glow */
+/* RGB subtle glow border */
 .box::before{
   content:"";
   position:absolute;
@@ -36,9 +39,9 @@ body{
     45deg,red,orange,yellow,green,cyan,blue,violet,red
   );
   background-size:400%;
-  z-index:-1;
   animation:rgb 12s linear infinite;
   opacity:.25;
+  z-index:-1;
 }
 
 @keyframes rgb{
@@ -46,34 +49,62 @@ body{
   100%{background-position:400%}
 }
 
+/* SITE BUTTONS */
 button.site{
-  padding:10px 16px;
-  margin:5px;
+  padding:10px 18px;
+  margin:6px;
   border:none;
   border-radius:10px;
   background:#007bff;
   color:white;
   cursor:pointer;
   font-weight:bold;
+  transition:.2s;
+}
+
+button.site:hover{
+  transform:scale(1.05);
 }
 
 .selected{
   background:#28a745 !important;
 }
 
-input, textarea{
+/* FACEBOOK NAME INPUT */
+#fbname{
+  width:65%;
+  margin:15px auto;
+  display:block;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  text-align:center;
+  font-size:15px;
+  transition:.3s;
+}
+
+/* TEXTAREA */
+textarea{
   width:100%;
+  height:140px;
   padding:12px;
   border-radius:12px;
   border:1px solid #ddd;
   margin-top:12px;
-  background:rgba(255,255,255,.8);
+  resize:none;
+  transition:.3s;
 }
 
-textarea{height:140px;}
+/* ANIMATED FOCUS GLOW */
+input:focus, textarea:focus{
+  outline:none;
+  border-color:#00bfff;
+  box-shadow:0 0 10px rgba(0,191,255,.6);
+}
 
+/* SUBMIT BUTTON */
 .submit-btn{
-  margin-top:15px;
+  margin-top:18px;
   padding:14px;
   width:100%;
   border:none;
@@ -89,9 +120,42 @@ textarea{height:140px;}
   transform:scale(1.05);
 }
 
-.counter{font-size:13px;margin-top:5px;color:#555;}
-.success{margin-top:15px;color:green;font-weight:bold;}
-.footer{margin-top:20px;font-size:13px;color:#666;}
+/* COUNTER */
+.counter{
+  font-size:13px;
+  margin-top:6px;
+  color:#555;
+}
+
+/* SUCCESS TEXT */
+.success{
+  margin-top:15px;
+  color:green;
+  font-weight:bold;
+}
+
+/* FOOTER */
+.footer{
+  margin-top:20px;
+  font-size:13px;
+  color:#666;
+}
+
+/* MOBILE OPTIMIZATION */
+@media(max-width:520px){
+  .box{
+    width:92%;
+    padding:20px;
+  }
+
+  #fbname{
+    width:85%;
+  }
+
+  textarea{
+    height:120px;
+  }
+}
 </style>
 </head>
 
@@ -115,7 +179,7 @@ textarea{height:140px;}
 
 <div class="counter" id="count">0 numbers entered</div>
 
-<button class="submit-btn">Submit Accounts</button>
+<button class="submit-btn">Submit Accounts </button>
 </form>
 
 <div class="success" id="msg"></div>
@@ -130,22 +194,25 @@ Developer: ~ Bryle
 let selectedSite="";
 let lastSubmitTime=0;
 
+/* SELECT SITE */
 function selectSite(site){
   selectedSite=site;
   document.querySelectorAll(".site").forEach(b=>b.classList.remove("selected"));
   document.getElementById(site).classList.add("selected");
 }
 
-/* LIVE COUNT */
+/* LIVE COUNTER */
 numbers.oninput=()=>{
 let count=numbers.value
 .replace(/,/g,"\n")
 .replace(/\s+/g,"\n")
 .split("\n")
 .filter(n=>n.trim()).length;
+
 countEl.innerText=count+" numbers entered";
 };
 
+/* FORM SUBMIT */
 form.onsubmit=async e=>{
 e.preventDefault();
 
