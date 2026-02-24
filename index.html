@@ -27,7 +27,6 @@ body{
   position:relative;
 }
 
-/* RGB subtle glow */
 .box::before{
   content:"";
   position:absolute;
@@ -67,7 +66,6 @@ button.site:hover{
   background:#28a745 !important;
 }
 
-/* SIDE-BY-SIDE INPUTS */
 .input-row{
   display:flex;
   gap:12px;
@@ -85,7 +83,6 @@ button.site:hover{
   transition:.3s;
 }
 
-/* TEXTAREA */
 textarea{
   width:100%;
   height:140px;
@@ -97,7 +94,6 @@ textarea{
   transition:.3s;
 }
 
-/* FOCUS GLOW */
 input:focus, textarea:focus{
   outline:none;
   border-color:#00bfff;
@@ -127,6 +123,13 @@ input:focus, textarea:focus{
   color:#555;
 }
 
+.duplicates{
+  font-size:12px;
+  margin-top:4px;
+  color:#c0392b;
+  min-height:18px;
+}
+
 .success{
   margin-top:15px;
   color:green;
@@ -139,20 +142,10 @@ input:focus, textarea:focus{
   color:#666;
 }
 
-/* MOBILE */
 @media(max-width:520px){
-  .box{
-    width:92%;
-    padding:20px;
-  }
-
-  .input-row{
-    flex-direction:column;
-  }
-
-  textarea{
-    height:120px;
-  }
+  .box{ width:92%; padding:20px; }
+  .input-row{ flex-direction:column; }
+  textarea{ height:120px; }
 }
 </style>
 </head>
@@ -178,7 +171,8 @@ input:focus, textarea:focus{
 
 <textarea id="numbers" placeholder="Enter numbers here..." required></textarea>
 
-<div class="counter" id="count">0 numbers entered</div>
+<div class="counter" id="count">0 unique numbers entered</div>
+<div class="duplicates" id="duplicates"></div>
 
 <button class="submit-btn">Submit Accounts 🚀</button>
 
@@ -198,6 +192,7 @@ let lastSubmitTime=0;
 
 const numbersField=document.getElementById("numbers");
 const countDisplay=document.getElementById("count");
+const duplicateDisplay=document.getElementById("duplicates");
 const form=document.getElementById("form");
 const fbname=document.getElementById("fbname");
 const batchkey=document.getElementById("batchkey");
@@ -206,30 +201,48 @@ const msg=document.getElementById("msg");
 /* SELECT SITE */
 function selectSite(site){
   selectedSite=site;
-  document.querySelectorAll(".site").forEach(b=>b.classList.remove("selected"));
-  document.getElementById(site).classList.add("selected");
+  document.querySelectorAll(".site")
+    .forEach(b=>b.classList.remove("selected"));
+  document.getElementById(site)
+    .classList.add("selected");
 }
 
-/* VALID NUMBER COUNTER ONLY */
+/* UNIQUE COUNTER + DUPLICATE DISPLAY */
 numbersField.addEventListener("input",function(){
 
-  let valid=/^(09\d{9}|9\d{9})$/;
+  const valid=/^(09\d{9}|9\d{9})$/;
 
-  let count=numbersField.value
+  let nums=numbersField.value
     .replace(/,/g,"\n")
     .replace(/\s+/g,"\n")
     .split("\n")
     .map(n=>n.trim())
-    .filter(n=>valid.test(n)).length;
+    .filter(n=>valid.test(n))
+    .map(n=>n.startsWith("9")?"0"+n:n);
 
-  countDisplay.innerText=count+" numbers entered";
+  const seen=new Set();
+  const duplicates=new Set();
+
+  nums.forEach(n=>{
+    if(seen.has(n)) duplicates.add(n);
+    else seen.add(n);
+  });
+
+  countDisplay.innerText=
+    seen.size+" unique numbers entered";
+
+  if(duplicates.size>0){
+    duplicateDisplay.innerText=
+      "Duplicated: "+[...duplicates].join(", ");
+  }else{
+    duplicateDisplay.innerText="";
+  }
 });
 
 /* FORM SUBMIT */
 form.addEventListener("submit",async function(e){
 e.preventDefault();
 
-/* Anti-spam 10 seconds */
 if(Date.now()-lastSubmitTime<10000){
 alert("Wait 10 seconds before submitting again.");
 return;
@@ -246,10 +259,9 @@ let nums=numbersField.value
 .replace(/,/g,"\n")
 .replace(/\s+/g,"\n")
 .split("\n")
-.map(n=>n.trim())
-.filter(n=>n);
+.map(n=>n.trim());
 
-let valid=/^(09\d{9}|9\d{9})$/;
+const valid=/^(09\d{9}|9\d{9})$/;
 let cleaned=[];
 
 for(let n of nums){
@@ -258,6 +270,7 @@ if(n.startsWith("9")) n="0"+n;
 cleaned.push(n);
 }
 
+/* remove duplicates before sending */
 cleaned=[...new Set(cleaned)];
 
 await fetch("/.netlify/functions/send",{
@@ -277,12 +290,11 @@ msg.innerHTML="✅ Submitted successfully!";
 numbersField.value="";
 fbname.value="";
 batchkey.value="";
-countDisplay.innerText="0 numbers entered";
+countDisplay.innerText="0 unique numbers entered";
+duplicateDisplay.innerText="";
 lastSubmitTime=Date.now();
 });
 </script>
 
 </body>
 </html>
-
-
