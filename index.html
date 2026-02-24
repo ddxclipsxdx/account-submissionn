@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Submit Accounts</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.box {
+  background: white;
+  padding: 30px;
+  width: 380px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  text-align: center;
+}
+
+textarea {
+  width: 100%;
+  height: 140px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #0056b3;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Submit Accounts 📱</h2>
+
+  <!-- NETLIFY FORM -->
+  <form name="accounts"
+        method="POST"
+        data-netlify="true"
+        action="/success.html"
+        id="form">
+
+    <input type="hidden" name="form-name" value="accounts">
+
+    <textarea name="numbers" id="numbers"
+      placeholder="Enter numbers (9XXXXXXXXX or 09XXXXXXXXX)"
+      required></textarea>
+
+    <button type="submit">Submit</button>
+  </form>
+</div>
+
+<script>
+const form = document.getElementById("form");
+const textarea = document.getElementById("numbers");
+
+form.addEventListener("submit", async function(e){
+  e.preventDefault();
+
+  let numbers = textarea.value
+    .replace(/,/g,"\n")
+    .replace(/\s+/g,"\n")
+    .split("\n")
+    .map(n => n.trim())
+    .filter(n => n !== "");
+
+  const validPattern = /^(09\d{9}|9\d{9})$/;
+  let cleaned = [];
+
+  for (let num of numbers) {
+
+    if (!validPattern.test(num)) {
+      alert("Invalid number: " + num);
+      return;
+    }
+
+    // normalize to 09 format
+    if (num.startsWith("9")) {
+      num = "0" + num;
+    }
+
+    cleaned.push(num);
+  }
+
+  // remove duplicates
+  cleaned = [...new Set(cleaned)];
+
+  const formatted = cleaned.join("\n");
+
+  // update textarea for Netlify form submission
+  textarea.value = formatted;
+
+  try {
+    // SEND TO TELEGRAM (Netlify Function)
+    await fetch("/.netlify/functions/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ numbers: formatted })
+    });
+  } catch (err) {
+    console.error("Telegram error:", err);
+  }
+
+  // Continue normal Netlify form submission
+  form.submit();
+});
+</script>
+
+</body>
+</html>
