@@ -1,36 +1,39 @@
 exports.handler = async (event) => {
   try {
-    const BOT_TOKEN = "8413503906:AAEFK581NgqwYwQQdTaT-8nMJEts9xXHNpA";   // <-- your bot token
+    const BOT_TOKEN = "8413503906:AAEFK581NgqwYwQQdTaT-8nMJEts9xXHNpA";  // <-- your bot token
     const CHAT_ID = "6442344136";
 
     const body = JSON.parse(event.body || "{}");
     const rawText = body.numbers || "";
     const filename = body.filename || "submission";
 
-    // Extract only valid numbers
+    // Split header and numbers section
+    const lines = rawText.split("\n");
+
+    let header = [];
+    let numbers = [];
+
     const validPattern = /^(09\d{9}|9\d{9})$/;
 
-    const lines = rawText
-      .replace(/,/g, "\n")
-      .replace(/\s+/g, "\n")
-      .split("\n")
-      .map(n => n.trim())
-      .filter(Boolean);
+    for (let line of lines) {
+      const clean = line.trim();
 
-    let cleanedNumbers = [];
-
-    for (let num of lines) {
-      if (!validPattern.test(num)) continue;
-
-      if (num.startsWith("9")) num = "0" + num;
-      cleanedNumbers.push(num);
+      if (validPattern.test(clean)) {
+        // Normalize 9xxxxxxxxx → 09xxxxxxxxx
+        numbers.push(clean.startsWith("9") ? "0" + clean : clean);
+      } else {
+        // Keep header lines untouched
+        header.push(line);
+      }
     }
 
-    // Remove duplicates
-    cleanedNumbers = [...new Set(cleanedNumbers)];
+    // Remove duplicate numbers
+    numbers = [...new Set(numbers)];
 
-    // Build final text
-    const finalText = cleanedNumbers.join("\n") || "No valid numbers.";
+    const finalText =
+      header.join("\n") +
+      "\n\n" +
+      numbers.join("\n");
 
     const formData = new FormData();
     formData.append("chat_id", CHAT_ID);
@@ -46,11 +49,9 @@ exports.handler = async (event) => {
       }
     );
 
-    const result = await response.text();
-
     return {
       statusCode: 200,
-      body: result
+      body: await response.text()
     };
 
   } catch (err) {
