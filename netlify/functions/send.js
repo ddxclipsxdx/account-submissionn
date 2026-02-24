@@ -13,22 +13,53 @@ exports.handler = async (event) => {
     let header = [];
     let numbers = [];
 
-    const validPattern = /^(09\d{9}|9\d{9})$/;
+    // Updated pattern to match:
+    // - Numbers starting with 0 followed by 10 digits (total 11)
+    // - Numbers starting with 9 followed by 9 digits (total 10)
+    // - Numbers that are exactly 10 or 11 digits and contain only numbers
+    const validPattern = /^(\d{10,11})$/;
 
     for (let line of lines) {
       const clean = line.trim();
+      
+      // Skip empty lines
+      if (clean === "") continue;
 
-      if (validPattern.test(clean)) {
-        // Normalize 9xxxxxxxxx → 09xxxxxxxxx
-        numbers.push(clean.startsWith("9") ? "0" + clean : clean);
+      // Check if line contains only digits and has valid length
+      if (/^\d+$/.test(clean)) {
+        const length = clean.length;
+        
+        // Handle different phone number formats
+        if (length === 10) {
+          // 10-digit number (9xxxxxxxxx format)
+          if (clean.startsWith("9")) {
+            numbers.push("0" + clean); // Add leading 0
+          } else {
+            // Could be a 10-digit number starting with something else
+            numbers.push(clean);
+          }
+        } else if (length === 11) {
+          // 11-digit number (09xxxxxxxxx format)
+          if (clean.startsWith("09")) {
+            numbers.push(clean);
+          } else {
+            // 11 digits but not starting with 09 - still keep as is
+            numbers.push(clean);
+          }
+        } else {
+          // Not a valid phone number length, treat as header
+          header.push(line);
+        }
       } else {
-        // Keep header lines untouched
+        // Contains non-digits, treat as header
         header.push(line);
       }
     }
 
     // Remove duplicate numbers
     numbers = [...new Set(numbers)];
+
+    console.log(`Found ${numbers.length} unique numbers`); // Debug log
 
     const finalText =
       header.join("\n") +
@@ -51,13 +82,17 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      body: await response.text()
+      body: JSON.stringify({ 
+        message: "Success", 
+        numbersFound: numbers.length,
+        telegramResponse: await response.text()
+      })
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      body: err.toString()
+      body: JSON.stringify({ error: err.toString() })
     };
   }
 };
