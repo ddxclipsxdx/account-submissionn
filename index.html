@@ -187,115 +187,151 @@ Developer: ~ Bryle
 </div>
 
 <script>
-let selectedSite="";
-let lastSubmitTime=0;
+let selectedSite = "";
+let lastSubmitTime = 0;
 
-const numbersField=document.getElementById("numbers");
-const countDisplay=document.getElementById("count");
-const duplicateDisplay=document.getElementById("duplicates");
-const form=document.getElementById("form");
-const fbname=document.getElementById("fbname");
-const batchkey=document.getElementById("batchkey");
-const msg=document.getElementById("msg");
+const numbersField = document.getElementById("numbers");
+const countDisplay = document.getElementById("count");
+const duplicateDisplay = document.getElementById("duplicates");
+const form = document.getElementById("form");
+const fbname = document.getElementById("fbname");
+const batchkey = document.getElementById("batchkey");
+const msg = document.getElementById("msg");
 
 /* SELECT SITE */
 function selectSite(site){
-  selectedSite=site;
+  selectedSite = site;
   document.querySelectorAll(".site")
-    .forEach(b=>b.classList.remove("selected"));
+    .forEach(b => b.classList.remove("selected"));
   document.getElementById(site)
     .classList.add("selected");
 }
 
+/* Function to clean invisible Unicode characters */
+function cleanInvisibleChars(text) {
+  return text.replace(/[\u200E-\u200F\u202A-\u202E]/g, '');
+}
+
 /* UNIQUE COUNTER + DUPLICATE DISPLAY */
-numbersField.addEventListener("input",function(){
-
-  const valid=/^(09\d{9}|9\d{9})$/;
-
-  let nums=numbersField.value
-    .replace(/,/g,"\n")
-    .replace(/\s+/g,"\n")
+numbersField.addEventListener("input", function() {
+  // Remove invisible Unicode characters first
+  let rawValue = cleanInvisibleChars(numbersField.value);
+  
+  // Split and clean
+  let nums = rawValue
+    .replace(/,/g, "\n")
+    .replace(/\s+/g, "\n")
     .split("\n")
-    .map(n=>n.trim())
-    .filter(n=>valid.test(n))
-    .map(n=>n.startsWith("9")?"0"+n:n);
+    .map(n => n.trim())
+    .filter(n => {
+      if (n === "") return false;
+      // Check if it's a valid number (10-11 digits, all numbers)
+      return /^\d{10,11}$/.test(n);
+    })
+    .map(n => {
+      return n.startsWith("9") ? "0" + n : n;
+    });
 
-  const seen=new Set();
-  const duplicates=new Set();
+  const seen = new Set();
+  const duplicates = new Set();
 
-  nums.forEach(n=>{
-    if(seen.has(n)) duplicates.add(n);
+  nums.forEach(n => {
+    if (seen.has(n)) duplicates.add(n);
     else seen.add(n);
   });
 
-  countDisplay.innerText=
-    seen.size+" unique numbers entered";
+  countDisplay.innerText = seen.size + " unique numbers entered";
 
-  if(duplicates.size>0){
-    duplicateDisplay.innerText=
-      "Duplicated: "+[...duplicates].join(", ");
-  }else{
-    duplicateDisplay.innerText="";
+  if (duplicates.size > 0) {
+    duplicateDisplay.innerText = "Duplicated: " + [...duplicates].join(", ");
+  } else {
+    duplicateDisplay.innerText = "";
   }
 });
 
 /* FORM SUBMIT */
-form.addEventListener("submit",async function(e){
-e.preventDefault();
+form.addEventListener("submit", async function(e) {
+  e.preventDefault();
 
-if(Date.now()-lastSubmitTime<10000){
-alert("Wait 10 seconds before submitting again.");
-return;
-}
+  if (Date.now() - lastSubmitTime < 10000) {
+    alert("Wait 10 seconds before submitting again.");
+    return;
+  }
 
-let fb=fbname.value.trim();
-let key=batchkey.value.trim();
+  let fb = fbname.value.trim();
+  let key = batchkey.value.trim();
 
-if(!fb){alert("Facebook name required.");return;}
-if(!key){alert("Password required.");return;}
-if(!selectedSite){alert("Select site first.");return;}
+  if (!fb) { alert("Facebook name required."); return; }
+  if (!key) { alert("Password required."); return; }
+  if (!selectedSite) { alert("Select site first."); return; }
 
-let nums=numbersField.value
-.replace(/,/g,"\n")
-.replace(/\s+/g,"\n")
-.split("\n")
-.map(n=>n.trim());
+  // Clean invisible characters from the entire textarea value
+  let cleanedTextarea = cleanInvisibleChars(numbersField.value);
+  
+  let nums = cleanedTextarea
+    .replace(/,/g, "\n")
+    .replace(/\s+/g, "\n")
+    .split("\n")
+    .map(n => n.trim());
 
-const valid=/^(09\d{9}|9\d{9})$/;
-let cleaned=[];
+  let cleaned = [];
 
-for(let n of nums){
-if(!valid.test(n)) continue;
-if(n.startsWith("9")) n="0"+n;
-cleaned.push(n);
-}
+  for (let n of nums) {
+    if (n === "") continue;
+    // Check if it's a valid number (10-11 digits)
+    if (!/^\d{10,11}$/.test(n)) continue;
+    if (n.startsWith("9")) {
+      cleaned.push("0" + n);
+    } else {
+      cleaned.push(n);
+    }
+  }
 
-/* remove duplicates before sending */
-cleaned=[...new Set(cleaned)];
+  // Remove duplicates before sending
+  cleaned = [...new Set(cleaned)];
 
-await fetch("/.netlify/functions/send",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-numbers:`Site: ${selectedSite}
+  if (cleaned.length === 0) {
+    alert("No valid numbers found.");
+    return;
+  }
+
+  // Format the message
+  const formattedMessage = `Site: ${selectedSite}
 Facebook: ${fb}
 Password: ${key}
 
-${cleaned.join("\n")}`,
-filename:fb
-})
-});
+${cleaned.join("\n")}`;
 
-msg.innerHTML="✅ Submitted successfully!";
-numbersField.value="";
-fbname.value="";
-batchkey.value="";
-countDisplay.innerText="0 unique numbers entered";
-duplicateDisplay.innerText="";
-lastSubmitTime=Date.now();
+  try {
+    const response = await fetch("/.netlify/functions/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numbers: formattedMessage,
+        filename: fb
+      })
+    });
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      msg.innerHTML = "✅ Submitted successfully!";
+      numbersField.value = "";
+      fbname.value = "";
+      batchkey.value = "";
+      countDisplay.innerText = "0 unique numbers entered";
+      duplicateDisplay.innerText = "";
+    } else {
+      msg.innerHTML = "❌ Error: " + (result.error || "Unknown error");
+    }
+  } catch (error) {
+    msg.innerHTML = "❌ Error submitting";
+    console.error(error);
+  }
+  
+  lastSubmitTime = Date.now();
 });
 </script>
 
 </body>
 </html>
-
