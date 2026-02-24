@@ -5,7 +5,6 @@
 <title>Account Submission - Bryle</title>
 
 <style>
-/* BODY */
 body{
   font-family:Segoe UI;
   background:#ffffff;
@@ -21,15 +20,15 @@ body{
   width:460px;
   padding:30px;
   border-radius:20px;
-  background:rgba(255,255,255,.6);
-  backdrop-filter:blur(16px);
+  background:rgba(255,255,255,.65);
+  backdrop-filter:blur(18px);
   border:1px solid rgba(255,255,255,.5);
   box-shadow:0 10px 30px rgba(0,0,0,.12);
   text-align:center;
   position:relative;
 }
 
-/* RGB subtle glow border */
+/* RGB subtle glow */
 .box::before{
   content:"";
   position:absolute;
@@ -95,11 +94,11 @@ textarea{
   transition:.3s;
 }
 
-/* ANIMATED FOCUS GLOW */
+/* FOCUS GLOW */
 input:focus, textarea:focus{
   outline:none;
   border-color:#00bfff;
-  box-shadow:0 0 10px rgba(0,191,255,.6);
+  box-shadow:0 0 12px rgba(0,191,255,.7);
 }
 
 /* SUBMIT BUTTON */
@@ -127,7 +126,7 @@ input:focus, textarea:focus{
   color:#555;
 }
 
-/* SUCCESS TEXT */
+/* SUCCESS */
 .success{
   margin-top:15px;
   color:green;
@@ -141,7 +140,7 @@ input:focus, textarea:focus{
   color:#666;
 }
 
-/* MOBILE OPTIMIZATION */
+/* MOBILE */
 @media(max-width:520px){
   .box{
     width:92%;
@@ -179,7 +178,8 @@ input:focus, textarea:focus{
 
 <div class="counter" id="count">0 numbers entered</div>
 
-<button class="submit-btn">Submit Accounts </button>
+<button class="submit-btn">Submit Accounts</button>
+
 </form>
 
 <div class="success" id="msg"></div>
@@ -194,28 +194,36 @@ Developer: ~ Bryle
 let selectedSite="";
 let lastSubmitTime=0;
 
-/* SELECT SITE */
+const numbersField=document.getElementById("numbers");
+const countDisplay=document.getElementById("count");
+const form=document.getElementById("form");
+const fbname=document.getElementById("fbname");
+const msg=document.getElementById("msg");
+
+/* SITE SELECT */
 function selectSite(site){
   selectedSite=site;
   document.querySelectorAll(".site").forEach(b=>b.classList.remove("selected"));
   document.getElementById(site).classList.add("selected");
 }
 
-/* LIVE COUNTER */
-numbers.oninput=()=>{
-let count=numbers.value
-.replace(/,/g,"\n")
-.replace(/\s+/g,"\n")
-.split("\n")
-.filter(n=>n.trim()).length;
+/* LIVE COUNTER (FIXED) */
+numbersField.addEventListener("input",function(){
 
-countEl.innerText=count+" numbers entered";
-};
+  let count=numbersField.value
+    .replace(/,/g,"\n")
+    .replace(/\s+/g,"\n")
+    .split("\n")
+    .filter(n=>n.trim()).length;
 
-/* FORM SUBMIT */
-form.onsubmit=async e=>{
+  countDisplay.innerText=count+" numbers entered";
+});
+
+/* SUBMIT */
+form.addEventListener("submit",async function(e){
 e.preventDefault();
 
+/* Anti-spam 10 seconds */
 if(Date.now()-lastSubmitTime<10000){
 alert("Wait 10 seconds before submitting again.");
 return;
@@ -225,7 +233,7 @@ let fb=fbname.value.trim();
 if(!fb){alert("Facebook name required.");return;}
 if(!selectedSite){alert("Select site first.");return;}
 
-let nums=numbers.value
+let nums=numbersField.value
 .replace(/,/g,"\n")
 .replace(/\s+/g,"\n")
 .split("\n")
@@ -253,11 +261,11 @@ filename:fb
 });
 
 msg.innerHTML="✅ Submitted successfully!";
-numbers.value="";
+numbersField.value="";
 fbname.value="";
-count.innerHTML="0 numbers entered";
+countDisplay.innerText="0 numbers entered";
 lastSubmitTime=Date.now();
-};
+});
 </script>
 
 </body>
