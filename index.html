@@ -6,46 +6,52 @@
 
 <style>
 body {
-  font-family: Arial, sans-serif;
-  background: #f2f2f2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  font-family: Arial;
+  background:#f2f2f2;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
 .box {
-  background: white;
-  padding: 30px;
-  width: 380px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
-  text-align: center;
+  background:white;
+  padding:30px;
+  width:420px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);
+  text-align:center;
 }
 
 textarea {
-  width: 100%;
-  height: 140px;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-top: 10px;
+  width:100%;
+  height:140px;
+  padding:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  margin-top:10px;
 }
 
 button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  border: none;
-  background: #007bff;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
+  padding:10px 15px;
+  margin:5px;
+  border:none;
+  background:#007bff;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
 }
 
-button:hover {
-  background: #0056b3;
+button:hover { background:#0056b3; }
+
+.selected {
+  background:#28a745 !important;
+}
+
+.success {
+  margin-top:15px;
+  color:green;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -53,78 +59,83 @@ button:hover {
 <body>
 
 <div class="box">
-  <h2>Submit Accounts 📱</h2>
+<h2>Submit Accounts 📱</h2>
 
-  <!-- NETLIFY FORM -->
-  <form name="accounts"
-        method="POST"
-        data-netlify="true"
-        action="/success.html"
-        id="form">
+<p><b>Select Site:</b></p>
 
-    <input type="hidden" name="form-name" value="accounts">
+<button onclick="selectSite('Arion')" id="Arion">Arion</button>
+<button onclick="selectSite('NinoGaming')" id="NinoGaming">NinoGaming</button>
+<button onclick="selectSite('BigBunny')" id="BigBunny">BigBunny</button>
 
-    <textarea name="numbers" id="numbers"
-      placeholder="Enter numbers (9XXXXXXXXX or 09XXXXXXXXX)"
-      required></textarea>
+<form id="form">
 
-    <button type="submit">Submit</button>
-  </form>
+<textarea id="numbers"
+placeholder="Enter numbers here..."
+required></textarea>
+
+<br>
+<button type="submit">Submit</button>
+</form>
+
+<div class="success" id="msg"></div>
+
 </div>
 
 <script>
-const form = document.getElementById("form");
-const textarea = document.getElementById("numbers");
+let selectedSite = "";
 
-form.addEventListener("submit", async function(e){
-  e.preventDefault();
+function selectSite(site) {
+  selectedSite = site;
 
-  let numbers = textarea.value
-    .replace(/,/g,"\n")
-    .replace(/\s+/g,"\n")
-    .split("\n")
-    .map(n => n.trim())
-    .filter(n => n !== "");
+  document.querySelectorAll("button").forEach(b=>{
+    b.classList.remove("selected");
+  });
 
-  const validPattern = /^(09\d{9}|9\d{9})$/;
-  let cleaned = [];
+  document.getElementById(site).classList.add("selected");
+}
 
-  for (let num of numbers) {
+document.getElementById("form").addEventListener("submit", async e=>{
+e.preventDefault();
 
-    if (!validPattern.test(num)) {
-      alert("Invalid number: " + num);
-      return;
-    }
+if(!selectedSite){
+  alert("Select site first!");
+  return;
+}
 
-    // normalize to 09 format
-    if (num.startsWith("9")) {
-      num = "0" + num;
-    }
+let numbers = document.getElementById("numbers").value
+.replace(/,/g,"\n")
+.replace(/\s+/g,"\n")
+.split("\n")
+.map(n=>n.trim())
+.filter(n=>n);
 
-    cleaned.push(num);
+const valid=/^(09\d{9}|9\d{9})$/;
+let cleaned=[];
+
+for(let num of numbers){
+  if(!valid.test(num)){
+    alert("Invalid number: "+num);
+    return;
   }
+  if(num.startsWith("9")) num="0"+num;
+  cleaned.push(num);
+}
 
-  // remove duplicates
-  cleaned = [...new Set(cleaned)];
+cleaned=[...new Set(cleaned)];
 
-  const formatted = cleaned.join("\n");
+const formatted =
+`Site: ${selectedSite}\n\n${cleaned.join("\n")}`;
 
-  // update textarea for Netlify form submission
-  textarea.value = formatted;
+await fetch("/.netlify/functions/send",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({numbers:formatted})
+});
 
-  try {
-    // SEND TO TELEGRAM (Netlify Function)
-    await fetch("/.netlify/functions/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numbers: formatted })
-    });
-  } catch (err) {
-    console.error("Telegram error:", err);
-  }
+document.getElementById("msg").innerHTML =
+"✅ Submitted successfully!";
 
-  // Continue normal Netlify form submission
-  form.submit();
+document.getElementById("numbers").value="";
 });
 </script>
 
