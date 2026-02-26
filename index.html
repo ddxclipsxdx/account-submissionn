@@ -2,104 +2,338 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Account Submission Notice</title>
+<title>Account Submission - Bryle</title>
 
 <style>
-body {
-  margin: 0;
-  background: #0e1116;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #e4e6eb;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+body{
+  font-family:Segoe UI, Arial;
+  background:#ffffff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
 }
 
-.container {
-  text-align: center;
-  max-width: 520px;
-  padding: 40px 30px;
+.box{
+  width:500px;
+  padding:30px;
+  border-radius:20px;
+  background:rgba(255,255,255,.65);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
+  text-align:center;
+  position:relative;
 }
 
-h1 {
-  font-weight: 500;
-  margin-bottom: 15px;
-  letter-spacing: .5px;
+.box::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:22px;
+  background:linear-gradient(
+    45deg,red,orange,yellow,green,cyan,blue,violet,red
+  );
+  background-size:400%;
+  animation:rgb 12s linear infinite;
+  opacity:.25;
+  z-index:-1;
 }
 
-p {
-  color: #aeb4be;
-  line-height: 1.6;
-  margin: 12px 0;
+@keyframes rgb{
+  0%{background-position:0%}
+  100%{background-position:400%}
 }
 
-#countdown {
-  margin-top: 20px;
-  font-size: 28px;
-  font-weight: 500;
-  color: #8aa4ff;
-  letter-spacing: 1px;
+button.site{
+  padding:10px 18px;
+  margin:8px;
+  border:none;
+  border-radius:10px;
+  background:#007bff;
+  color:white;
+  cursor:pointer;
+  font-weight:bold;
+  transition:.2s;
 }
 
-.signature {
-  margin-top: 30px;
-  color: #7c8cff;
-  letter-spacing: 1px;
+button.site:hover{
+  transform:scale(1.05);
+}
+
+.selected{
+  background:#28a745 !important;
+}
+
+.input-row{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin:15px 0;
+}
+
+.input-row input{
+  flex:1;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ccc;
+  text-align:center;
+  font-size:15px;
+  transition:.3s;
+}
+
+textarea{
+  width:100%;
+  height:140px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  margin-top:12px;
+  resize:none;
+  transition:.3s;
+}
+
+input:focus, textarea:focus{
+  outline:none;
+  border-color:#00bfff;
+  box-shadow:0 0 12px rgba(0,191,255,.7);
+}
+
+.submit-btn{
+  margin-top:18px;
+  padding:14px;
+  width:100%;
+  border:none;
+  border-radius:12px;
+  color:white;
+  font-weight:bold;
+  background:linear-gradient(45deg,#007bff,#00d4ff);
+  cursor:pointer;
+  transition:.3s;
+}
+
+.submit-btn:hover{
+  transform:scale(1.05);
+}
+
+.counter{
+  font-size:13px;
+  margin-top:6px;
+  color:#555;
+}
+
+.duplicates{
+  font-size:12px;
+  margin-top:4px;
+  color:#c0392b;
+  min-height:18px;
+}
+
+.success{
+  margin-top:15px;
+  color:green;
+  font-weight:bold;
+}
+
+.footer{
+  margin-top:20px;
+  font-size:13px;
+  color:#666;
+}
+
+@media(max-width:520px){
+  .box{ width:92%; padding:20px; }
+  .input-row{ flex-direction:column; }
+  textarea{ height:120px; }
 }
 </style>
 </head>
 
 <body>
-<div class="container">
 
-<h1>Account Submission Notice</h1>
+<div class="box">
 
-<p>
-Submission of accounts is temporarily closed.
-</p>
+<h2>Account Submission - Bryle</h2>
 
-<p>
-It will reopen later at 
-<strong>8:00 PM onwards</strong>.
-</p>
+<p><b>Select Site:</b></p>
 
-<div id="countdown">Loading countdown…</div>
+<button class="site" onclick="selectSite('Arion')" id="Arion">Arion</button>
+<button class="site" onclick="selectSite('NinoGaming')" id="NinoGaming">NinoGaming</button>
+<button class="site" onclick="selectSite('BigBunny')" id="BigBunny">BigBunny</button>
 
-<p>
-Please check back at the scheduled time.  
-Thank you for your patience and understanding.
-</p>
+<form id="form">
 
-<div class="signature">~ BRYLE</div>
+<div class="input-row">
+  <input type="text" id="fbname" placeholder="Facebook Name" required>
+  <input type="text" id="batchkey" placeholder="Password" required>
+</div>
+
+<textarea id="numbers" placeholder="Enter numbers here..." required></textarea>
+
+<div class="counter" id="count">0 unique numbers entered</div>
+<div class="duplicates" id="duplicates"></div>
+
+<button class="submit-btn">Submit Accounts</button>
+
+</form>
+
+<div class="success" id="msg"></div>
+
+<div class="footer">
+Developer: ~ Bryle
+</div>
 
 </div>
 
 <script>
-function updateCountdown() {
-  const now = new Date();
+let selectedSite = "";
+let lastSubmitTime = 0;
 
-  const target = new Date();
-  target.setHours(20, 0, 0, 0);
+const numbersField = document.getElementById("numbers");
+const countDisplay = document.getElementById("count");
+const duplicateDisplay = document.getElementById("duplicates");
+const form = document.getElementById("form");
+const fbname = document.getElementById("fbname");
+const batchkey = document.getElementById("batchkey");
+const msg = document.getElementById("msg");
 
-  if (now > target) {
-    target.setDate(target.getDate() + 1);
-  }
-
-  const diff = target - now;
-
-  const h = Math.floor(diff / 1000 / 60 / 60);
-  const m = Math.floor(diff / 1000 / 60 % 60);
-  const s = Math.floor(diff / 1000 % 60);
-
-  document.getElementById("countdown").textContent =
-    `${h}h ${m}m ${s}s remaining`;
+/* SELECT SITE */
+function selectSite(site){
+  selectedSite = site;
+  document.querySelectorAll(".site")
+    .forEach(b => b.classList.remove("selected"));
+  document.getElementById(site)
+    .classList.add("selected");
 }
 
-setInterval(updateCountdown, 1000);
-updateCountdown();
+/* Function to clean invisible Unicode characters */
+function cleanInvisibleChars(text) {
+  return text.replace(/[\u200E-\u200F\u202A-\u202E]/g, '');
+}
+
+/* UNIQUE COUNTER + DUPLICATE DISPLAY */
+numbersField.addEventListener("input", function() {
+  // Remove invisible Unicode characters first
+  let rawValue = cleanInvisibleChars(numbersField.value);
+  
+  // Split and clean
+  let nums = rawValue
+    .replace(/,/g, "\n")
+    .replace(/\s+/g, "\n")
+    .split("\n")
+    .map(n => n.trim())
+    .filter(n => {
+      if (n === "") return false;
+      // Check if it's a valid number (10-11 digits, all numbers)
+      return /^\d{10,11}$/.test(n);
+    })
+    .map(n => {
+      return n.startsWith("9") ? "0" + n : n;
+    });
+
+  const seen = new Set();
+  const duplicates = new Set();
+
+  nums.forEach(n => {
+    if (seen.has(n)) duplicates.add(n);
+    else seen.add(n);
+  });
+
+  countDisplay.innerText = seen.size + " unique numbers entered";
+
+  if (duplicates.size > 0) {
+    duplicateDisplay.innerText = "Duplicated: " + [...duplicates].join(", ");
+  } else {
+    duplicateDisplay.innerText = "";
+  }
+});
+
+/* FORM SUBMIT */
+form.addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (Date.now() - lastSubmitTime < 10000) {
+    alert("Wait 10 seconds before submitting again.");
+    return;
+  }
+
+  let fb = fbname.value.trim();
+  let key = batchkey.value.trim();
+
+  if (!fb) { alert("Facebook name required."); return; }
+  if (!key) { alert("Password required."); return; }
+  if (!selectedSite) { alert("Select site first."); return; }
+
+  // Clean invisible characters from the entire textarea value
+  let cleanedTextarea = cleanInvisibleChars(numbersField.value);
+  
+  let nums = cleanedTextarea
+    .replace(/,/g, "\n")
+    .replace(/\s+/g, "\n")
+    .split("\n")
+    .map(n => n.trim());
+
+  let cleaned = [];
+
+  for (let n of nums) {
+    if (n === "") continue;
+    // Check if it's a valid number (10-11 digits)
+    if (!/^\d{10,11}$/.test(n)) continue;
+    if (n.startsWith("9")) {
+      cleaned.push("0" + n);
+    } else {
+      cleaned.push(n);
+    }
+  }
+
+  // Remove duplicates before sending
+  cleaned = [...new Set(cleaned)];
+
+  if (cleaned.length === 0) {
+    alert("No valid numbers found.");
+    return;
+  }
+
+  // Format the message
+  const formattedMessage = `Site: ${selectedSite}
+Facebook: ${fb}
+Password: ${key}
+
+${cleaned.join("\n")}`;
+
+  try {
+    const response = await fetch("/.netlify/functions/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numbers: formattedMessage,
+        filename: fb
+      })
+    });
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      msg.innerHTML = "✅ Submitted successfully!";
+      numbersField.value = "";
+      fbname.value = "";
+      batchkey.value = "";
+      countDisplay.innerText = "0 unique numbers entered";
+      duplicateDisplay.innerText = "";
+    } else {
+      msg.innerHTML = "❌ Error: " + (result.error || "Unknown error");
+    }
+  } catch (error) {
+    msg.innerHTML = "❌ Error submitting";
+    console.error(error);
+  }
+  
+  lastSubmitTime = Date.now();
+});
 </script>
 
 </body>
 </html>
+
 
